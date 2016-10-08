@@ -5,7 +5,7 @@
 //  Created by LawLincoln on 2016/9/22.
 //  Copyright © 2016年 LawLincoln. All rights reserved.
 //
-import Foundation
+import UIKit
 /// Ram
 //MARK:- Ram
 final public class Ram: NSObject {
