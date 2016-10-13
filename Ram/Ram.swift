@@ -61,7 +61,11 @@ final public class Ram: NSObject {
         pageControl.currentPage = 0
         end = complete
         scrollView.contentSize = CGSize(width: scrollView.bounds.width * CGFloat(works.count), height: scrollView.bounds.height)
-        let win = UIApplication.topMostViewController.view
+        var root = UIApplication.shared.windows.first?.rootViewController
+        while(root == nil) { root = UIApplication.shared.windows.first?.rootViewController }
+        var topController: UIViewController? = root
+        while (topController?.presentedViewController != nil) { topController = topController?.presentedViewController }
+        let win = topController!.view
         wrap.addSubview(scrollView)
         wrap.addSubview(pageControl)
         skipButtonAtEnd ? scrollView.addSubview(skipButton) : wrap.addSubview(skipButton)
@@ -190,12 +194,4 @@ private extension UIView {
                        completion: {[weak self] (_) in self?.removeFromSuperview() })
     }
 }
-private extension UIApplication {
-    static var topMostViewController: UIViewController {
-        var root = UIApplication.shared.windows.first?.rootViewController
-        while(root == nil) { root = UIApplication.shared.windows.first?.rootViewController }
-        var topController: UIViewController? = root
-        while (topController?.presentedViewController != nil) { topController = topController?.presentedViewController }
-        return topController!
-    }
-}
+
