@@ -54,8 +54,8 @@ final public class Ram: NSObject {
     
     func handle(work items: [Work], skip button: UIButton = Ram.defaultSkipButton, skipButtonAtEnd: Bool = true, complete: @escaping () -> Void = { _ in }) {
         works = items
-        layerOdd.contents = works[safe: 0]?.image?.cgImage
-        layerEven.contents = works[safe: 1]?.image?.cgImage
+        layerOdd.contents = works[ram: 0]?.image?.cgImage
+        layerEven.contents = works[ram: 1]?.image?.cgImage
         skipButton = button
         pageControl.numberOfPages = items.count
         pageControl.currentPage = 0
@@ -74,7 +74,7 @@ final public class Ram: NSObject {
     }
     
     @objc private func done() {
-        wrap.fadeOut()
+        wrap.ramFadeOut()
         end()
         Ram.happyEnd()
     }
@@ -129,39 +129,39 @@ extension Ram: UIScrollViewDelegate {
                 var f = layerEven.frame
                 f.origin.x = oddMaxX
                 layerEven.frame = f
-                guard let item =  works[safe: loadIndex] else { return }
+                guard let item =  works[ram: loadIndex] else { return }
                 layerEven.contents = imageFromCache(at: loadIndex)
-                layerEven.contentsGravity = item.mode.forLayer
+                layerEven.contentsGravity = item.mode.ramForLayer
             }
         } else if evenMinX < x && x < evenMaxX {//next
             if oddMinX != evenMaxX {
                 var f = layerOdd.frame
                 f.origin.x = evenMaxX
                 layerOdd.frame = f
-                guard let item =  works[safe: loadIndex] else { return }
+                guard let item =  works[ram: loadIndex] else { return }
                 layerOdd.contents = imageFromCache(at: loadIndex)
-                layerOdd.contentsGravity = item.mode.forLayer
+                layerOdd.contentsGravity = item.mode.ramForLayer
             }
         } else if evenMaxX <= oddMinX && x < evenMinX {
             var f = layerOdd.frame
             f.origin.x = evenMinX - width
             layerOdd.frame = f
-            guard let item =  works[safe: loadIndex - 1] else { return }
+            guard let item =  works[ram: loadIndex - 1] else { return }
             layerOdd.contents = imageFromCache(at: loadIndex - 1)
-            layerOdd.contentsGravity = item.mode.forLayer
+            layerOdd.contentsGravity = item.mode.ramForLayer
         } else if oddMaxX <= evenMinX && x < oddMinX {
             
             var f = layerEven.frame
             f.origin.x = oddMinX - width
             layerEven.frame = f
-            guard let item =  works[safe: loadIndex - 1] else { return }
+            guard let item =  works[ram: loadIndex - 1] else { return }
             layerEven.contents = imageFromCache(at: loadIndex - 1)
-            layerEven.contentsGravity = item.mode.forLayer
+            layerEven.contentsGravity = item.mode.ramForLayer
         }
     }
 }
 private extension UIViewContentMode {
-    var forLayer: String {
+    var ramForLayer: String {
         switch self {
         case .center: return "center"
         case .top: return "top"
@@ -179,12 +179,12 @@ private extension UIViewContentMode {
     }
 }
 private extension Array {
-    subscript(safe index: Int) -> Element? {
+    subscript(ram index: Int) -> Element? {
         return indices.contains(index) ? self[index] : nil
     }
 }
 private extension UIView {
-    func fadeOut() {
+    func ramFadeOut() {
         let animations = {
             self.layer.opacity = 0
             self.layer.transform = CATransform3DMakeScale(1.2, 1.2, 1.2)
