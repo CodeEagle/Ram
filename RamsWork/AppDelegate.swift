@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         for i in 1...8 {
             let name = "bg_illust0\(i)"
             let p = Bundle.main.path(forResource: name, ofType: "png")!
-            let work = Ram.Work(item: p, contentMode: .scaleAspectFit)
+            let work = Ram.Work(imagePath: p, contentMode: .scaleAspectFit)
             works.append(work)
         }
         Ram.handle(work: works, skipButtonAtEnd: false) {  print("done") }

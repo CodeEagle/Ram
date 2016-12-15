@@ -10,6 +10,8 @@ import UIKit
 //MARK:- Ram
 final public class Ram: NSObject {
     
+    private static var storeKey: String { return "ram_launch" }
+    
     static var shared: Ram! = Ram()
     class func happyEnd() { shared = nil }
     
@@ -19,7 +21,19 @@ final public class Ram: NSObject {
     }
     
     public class func handle(work items: [Work], skip button: UIButton = Ram.defaultSkipButton, skipButtonAtEnd: Bool = true, complete: @escaping () -> Void = { _ in }) {
+        let showOnce = UserDefaults.standard.value(forKey: storeKey) as? Bool == true
+        if showOnce {
+            complete()
+            return
+        }
         Ram.shared.handle(work: items, skip: button, skipButtonAtEnd: skipButtonAtEnd, complete: complete)
+    }
+    
+    public class func reset() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            UserDefaults.standard.set(false, forKey: storeKey)
+            UserDefaults.standard.synchronize()
+        }
     }
     
     internal var skipButton: UIButton!
@@ -35,6 +49,7 @@ final public class Ram: NSObject {
     private lazy var scrollView = UIScrollView(frame: UIScreen.main.bounds)
     internal lazy var layerOdd = CALayer()
     internal lazy var layerEven = CALayer()
+    private var _win: UIWindow?
     internal func imageFromCache(at index: Int) -> CGImage? { return works[index].image?.cgImage }
     private override init() {
         super.init()
@@ -50,6 +65,10 @@ final public class Ram: NSObject {
         scrollView.delegate = self
         pageControl.currentPageIndicatorTintColor = UIColor.darkGray
         pageControl.pageIndicatorTintColor = UIColor.lightGray
+        _win = UIWindow(frame: UIScreen.main.bounds)
+        _win?.rootViewController = UIViewController()
+        _win?.windowLevel = UIWindowLevelStatusBar + 1
+        _win?.isHidden = false
     }
     
     func handle(work items: [Work], skip button: UIButton = Ram.defaultSkipButton, skipButtonAtEnd: Bool = true, complete: @escaping () -> Void = { _ in }) {
@@ -61,22 +80,24 @@ final public class Ram: NSObject {
         pageControl.currentPage = 0
         end = complete
         scrollView.contentSize = CGSize(width: scrollView.bounds.width * CGFloat(works.count), height: scrollView.bounds.height)
-        var root = UIApplication.shared.windows.first?.rootViewController
-        while(root == nil) { root = UIApplication.shared.windows.first?.rootViewController }
-        var topController: UIViewController? = root
-        while (topController?.presentedViewController != nil) { topController = topController?.presentedViewController }
-        let win = topController!.view
         wrap.addSubview(scrollView)
         wrap.addSubview(pageControl)
         skipButtonAtEnd ? scrollView.addSubview(skipButton) : wrap.addSubview(skipButton)
-        win?.addSubview(wrap)
+        _win?.addSubview(wrap)
         skipButton.addTarget(self, action: #selector(Ram.done), for: .touchUpInside)
     }
     
     @objc private func done() {
-        wrap.ramFadeOut()
-        end()
-        Ram.happyEnd()
+        wrap.ram_fadeOut {
+            [weak self] in
+            self?.end()
+            self?._win = nil
+            DispatchQueue.global(qos: .userInitiated).async {
+                UserDefaults.standard.set(true, forKey: Ram.storeKey)
+                UserDefaults.standard.synchronize()
+            }
+            Ram.happyEnd()
+        }
     }
     
     public class var defaultSkipButton: UIButton {
@@ -104,7 +125,7 @@ final public class Ram: NSObject {
         let mode: UIViewContentMode
         var image: UIImage? { return UIImage(contentsOfFile: imagePath) }
         private let imagePath: String
-        public init(item i: String, contentMode m: UIViewContentMode = .scaleAspectFit) {
+        public init(imagePath i: String, contentMode m: UIViewContentMode = .scaleAspectFit) {
             imagePath = i
             mode = m
         }
@@ -184,14 +205,17 @@ private extension Array {
     }
 }
 private extension UIView {
-    func ramFadeOut() {
+    func ram_fadeOut(done: @escaping () -> ()) {
         let animations = {
             self.layer.opacity = 0
             self.layer.transform = CATransform3DMakeScale(1.2, 1.2, 1.2)
         }
         UIView.animate(withDuration: 0.2,
                        animations: animations,
-                       completion: {[weak self] (_) in self?.removeFromSuperview() })
+                       completion: {[weak self] (_) in
+                        done()
+                        self?.removeFromSuperview()
+        })
     }
 }
 
